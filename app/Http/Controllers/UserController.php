@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use App\Models\User;
+use Validator;
 
 class UserController extends Controller
 {
@@ -20,25 +22,41 @@ class UserController extends Controller
 
     public function update(Request $request)
     {
+        $id = auth()->user()->id;
+        $request->validate([
+            'email' => "required|email|unique:users,email,$id"
+        ]);
+
         $name = $request->input('name');
         $email = $request->input('email');
         $avatar = $request->file('image');
-        if ($avatar) {
-            Storage::delete(auth()->user()->avatar);
-            DB::table('users')
-                ->where('id', auth()->id())
-                ->update([
-                    'name' => $name,
-                    'email' => $email,
-                    'avatar' => $avatar->store('users','public'),
-                ]);
-        } else {
-            DB::table('users')
-                ->where('id', auth()->id())
-                ->update([
-                    'name' => $name,
-                    'email' => $email,
-                ]);
+        try {
+            if ($avatar) {
+                $fileName = time() . "-ws." . $avatar->getClientOriginalExtension();
+                $filePath = $avatar->storeAs('/public/users',$fileName);
+                Storage::delete(auth()->user()->avatar);
+                DB::table('users')
+                    ->where('id', auth()->id())
+                    ->update([
+                        'name' => $name,
+                        'email' => $email,
+                        'avatar' => 'users/' . $fileName,
+                    ]);
+            } else {
+                DB::table('users')
+                    ->where('id', auth()->id())
+                    ->update([
+                        'name' => $name,
+                        'email' => $email,
+                    ]);
+                }
+            return response()->json([
+                'status' => 201,
+            ]);
+        } catch (DataException $de) {
+            return response()->json([
+                'errors' => $de,
+            ]);
         }
     }
 
@@ -174,16 +192,17 @@ class UserController extends Controller
     // For admin
     public function addTeacher(Request $request)
     {
-        $name = $request->input('name');
-        $email = $request->input('email');
-        DB::table('users')
-            ->insert([
-                'name' => $name,
-                'email' => $email,
-                'password' => bcrypt('password'),
+        $validator = Validator::make($request->all(), [
+            'name' => 'required',
+            'email' => 'required',
+            'password' => 'required',
+        ]);
+        $user = User::create(array_merge(
+            $validator->validated(),
+            ['password' => bcrypt($request->password),
                 'role' => 1,
                 'status' => 1,
-            ]);
+            ]));
     }
 
     // For admin

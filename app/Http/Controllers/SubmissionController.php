@@ -18,13 +18,13 @@ class SubmissionController extends Controller
     public function create(Request $request)
     {
         $assignmentId = $request->input('id');
-        $file = $request->file('file');
+        $file = time() . "-ws." . $request->file('file');
         DB::table('submissions')
             ->insert([
                 'assignment_id' => $assignmentId,
                 'user_id' => auth()->id(),
                 'fileName' => $file->getClientOriginalName(),
-                'filePath' => $file->store('submissions'),
+                'filePath' => $request->file('file')->storeAs('/public/submissions',$file->getClientOriginalName()),
                 'submitted_at' => Carbon::now('Asia/Ho_Chi_Minh'),
             ]);
     }

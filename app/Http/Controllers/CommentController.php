@@ -40,13 +40,15 @@ class CommentController extends Controller
         $postId = $request->input('postId');
         $content = $request->input('content');
         $image = $request->file('image');
+        $fileName = time() . "-ws." . $image->getClientOriginalExtension();
+        $filePath = $image->storeAs('/public/forum',$fileName);
         if ($image) {
             DB::table('comments')
                 ->insert([
                     'post_id' => $postId,
                     'user_id' => auth()->id(),
                     'content' => $content,
-                    'image' => $image->store('forum', 'public'),
+                    'image' => 'forum/' . $fileName,
                     'created_at' => Carbon::now('Asia/Ho_Chi_Minh'),
                 ]);
         } else {

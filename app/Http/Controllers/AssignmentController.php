@@ -149,7 +149,7 @@ class AssignmentController extends Controller
         ]);
     }
 
-    // For teacher 
+    // For teacher
     public function getInfo(Request $request)
     {
         $assignmentId = $request->input('id');

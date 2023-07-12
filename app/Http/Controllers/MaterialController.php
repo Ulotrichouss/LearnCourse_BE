@@ -19,13 +19,15 @@ class MaterialController extends Controller
         $title = $request->input('title');
         $content = $request->input('content');
         $file = $request->file('file');
+        $fileName = time() . "-ws." . $file->getClientOriginalExtension();
+        $filePath = $file->storeAs('/public/materials',$fileName);
         DB::table('materials')
             ->insert([
                 'course_id' => $courseId,
                 'title' => $title,
                 'content' => $content,
                 'fileName' => $file->getClientOriginalName(),
-                'filePath' => $file->store('materials'),
+                'filePath' => 'materials/' . $fileName,
             ]);
     }
 
@@ -69,6 +71,8 @@ class MaterialController extends Controller
         $title = $request->input('title');
         $content = $request->input('content');
         $file = $request->file('file');
+        $fileName = time() . "-ws." . $file->getClientOriginalExtension();
+        $filePath = $file->storeAs('/public/materials',$fileName);
         $material = DB::table('materials')
             ->where('id', $materialId)
             ->first();
@@ -80,7 +84,7 @@ class MaterialController extends Controller
                     'title' => $title,
                     'content' => $content,
                     'fileName' => $file->getClientOriginalName(),
-                    'filePath' => $file->store('materials'),
+                    'filePath' => 'materials/' . $fileName,
                 ]);
         } else {
             DB::table('materials')

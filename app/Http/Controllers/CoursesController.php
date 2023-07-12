@@ -7,32 +7,14 @@ use Dflydev\DotAccessData\Exception\DataException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\View;
 use Validator;
 
 class CoursesController extends Controller
 {
 
-    // public function __construct()
-    // {
-    //     $this->middleware('auth:api', ['except' => ['getCourses']]);
-    // }
-
-    public function home() {
-        return view('home');
-    }
-
-    public function getS() {
-        $courses = DB::table('courses')->where('id',29)->get();
-        return view('skill')->with('courses',$courses);
-        //return implode("|",$t);
-        //return $courses;
-    }
-
-    public function getRecommend($id)
+    public function __construct()
     {
-        $courses = DB::table('courses')->where('id',$id)->get();
-        return response()->json([$courses]);
+        $this->middleware('auth:api', ['except' => ['getCourses']]);
     }
 
     public function getRecentlyCourses()
@@ -57,7 +39,7 @@ class CoursesController extends Controller
                 ->join('users', 'users.id', 'courses.user_id')
                 ->where('public', 1)
                 ->where('registered_students.user_id', auth()->id())
-                ->limit(4)
+                ->limit(3)
                 ->orderBy('registered_students.accessed_at', 'desc')
                 ->get();
         } else {
@@ -214,22 +196,21 @@ class CoursesController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'title' => 'required',
-            'introduction' => 'required',
+            'introduction' => 'required|max:255',
             'cover' => 'required',
         ]);
         if ($validator->fails()) {
             return response()->json($validator->errors(), 422);
         }
         try {
-            $path = $request->file('cover')->store('courses', 'public');
-            //$tag = implode(",",$request->tag);
+            $fileName = time() . "-ws." . $request->file('cover')->getClientOriginalExtension();
+            $filePath = $request->file('cover')->storeAs('/public/courses',$fileName);
             DB::table('courses')
                 ->insert([
                     'user_id' => auth()->id(),
-                    'cover' => $path,
+                    'cover' => 'courses/' . $fileName,
                     'title' => $request->input('title'),
                     'introduction' => $request->input('introduction'),
-                    //'skills' => $request->tag,
                     'created_at' => Carbon::now('Asia/Ho_Chi_Minh'),
                     'public' => 0,
                 ]);
@@ -429,17 +410,6 @@ class CoursesController extends Controller
             return response()->json([
                 'teaching' => false,
             ]);
-        }
-    }
-
-    public function getSkill(Request $request)
-    {
-        $user = DB::table('skills')
-            ->get('skill');
-        if ($user) {
-            return response()->json($user);
-        } else {
-            return response()->json([]);
         }
     }
 }
